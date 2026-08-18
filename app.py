@@ -9,6 +9,7 @@ import pdfplumber
 import plotly.express as px
 import streamlit as st
 
+
 # ==========================================
 # --- CONFIGURAÇÃO DA PÁGINA E TEMA ---
 # ==========================================
@@ -17,8 +18,8 @@ st.set_page_config(
 )
 
 # Versão atual e data da última alteração do sistema
-VERSAO_SISTEMA = "v2.6.0"
-DATA_ATUALIZACAO = "10/08/2026"
+VERSAO_SISTEMA = "v2.6.4"
+DATA_ATUALIZACAO = "16/08/2026"
 
 # ==========================================
 # --- CONTROLE DE ESTADO DA BARRA LATERAL ---
@@ -39,7 +40,7 @@ st.markdown("""
         [data-testid="collapsedControl"] {
             visibility: visible !important;
             display: block !important;
-            z-index: 999999;
+            z-index: 99999;
         }
         
         section[data-testid="stSidebar"] {
@@ -120,24 +121,22 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
 # ==========================================
 # --- SISTEMA DE SEGURANÇA E AUTENTICAÇÃO ---
 # ==========================================
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
-# Estado para controlar a tela de redefinição de senha
 if "esqueci_senha" not in st.session_state:
     st.session_state.esqueci_senha = False
 
-# Senha padrão armazenada no session_state para permitir alteração
 if "senha_sistema" not in st.session_state:
     st.session_state.senha_sistema = "1234"
 
 if not st.session_state.autenticado:
     st.title("🔒 Acesso Restrito - Gestor Financeiro Profissional")
 
-    # Tela de Recuperação / Alteração de Senha
     if st.session_state.esqueci_senha:
         st.markdown(
             "### 🔄 Redefinição de Senha\nPara redefinir, informe a senha mestre ou palavra-chave de segurança."
@@ -164,7 +163,6 @@ if not st.session_state.autenticado:
                 )
 
             if btn_salvar:
-                # Defina aqui uma palavra-chave fixa para destravar (ex: "admin123")
                 if palavra_chave == "admin123":
                     if nova_senha == confirmar_senha and nova_senha.strip() != "":
                         st.session_state.senha_sistema = nova_senha
@@ -184,13 +182,11 @@ if not st.session_state.autenticado:
                 st.session_state.esqueci_senha = False
                 st.rerun()
 
-    # Tela Normal de Login (Com suporte a Enter)
     else:
         st.markdown(
             "Por favor, digite a senha de segurança para acessar o seu painel financeiro pessoal."
         )
 
-        # O uso do st.form faz com que pressionar 'Enter' envie o formulário
         with st.form("form_login"):
             senha_digitada = st.text_input("Senha de Acesso:", type="password")
             submit_login = st.form_submit_button(
@@ -209,14 +205,12 @@ if not st.session_state.autenticado:
                         "Senha incorreta! Verifique a credencial e tente novamente."
                     )
 
-        # Botão fora do formulário para acionar a tela de recuperação
         if st.button("Esqueci minha senha"):
             st.session_state.esqueci_senha = True
             st.rerun()
 
     st.stop()
     
-   
 # ==========================================
 # --- CONEXÃO E MIGRAÇÃO AUTOMÁTICA DO DB ---
 # ==========================================
@@ -337,141 +331,6 @@ def calcular_mes_fatura(data_compra, dia_fechamento):
         return f"{data_compra.year}-{data_compra.month:02d}"
 
 
-def categorizar_automaticamente(descricao, tipo):
-    desc_upper = descricao.upper()
-    if tipo == "Receita":
-        if (
-            "SALARIO" in desc_upper
-            or "REMUNERACAO" in desc_upper
-            or "PAGAMENTO" in desc_upper
-        ):
-            return "Salário"
-        elif "VALE" in desc_upper or "ADIANTAMENTO" in desc_upper:
-            return "Vale"
-        elif (
-            "TED" in desc_upper
-            or "PIX" in desc_upper
-            or "TRANSFERENCIA" in desc_upper
-        ):
-            return "Freelance / Extra"
-        return "Outras Receitas"
-    else:
-        if any(
-            x in desc_upper
-            for x in [
-                "SUPERMERCADO",
-                "SHIBA",
-                "MARKET",
-                "HIPER",
-                "SUPER",
-                "MERCEARIA",
-                "BIG CENTER",
-                "ARROZ",
-                "LEITE",
-                "CARNE",
-                "FRANGO",
-                "PASTEL",
-                "SNACK",
-                "CAFE",
-                "BEBIDA",
-                "LIMPEZA",
-                "SABAO",
-                "PAPEL",
-                "BUDWEISER",
-                "CERV",
-                "MERCADO",
-            ]
-        ):
-            return "🛒 Supermercado (Necessidade)"
-        elif any(
-            x in desc_upper
-            for x in ["PET", "PETSHOP", "CACHORRO", "GATO", "VET", "RACAO"]
-        ):
-            return "🐾 Pet (Necessidade)"
-        elif any(
-            x in desc_upper
-            for x in ["LAZER", "CINEMA", "VIAGEM", "PASSEIO", "JOGO", "FESTA"]
-        ):
-            return "🎉 Lazer & Entretenimento (Desejos)"
-        elif any(
-            x in desc_upper
-            for x in [
-                "TELEFONICA",
-                "EDP",
-                "LUZ",
-                "AGUA",
-                "INTERNET",
-                "BOLETO",
-                "ALUGUEL",
-                "CONDOMINIO",
-            ]
-        ):
-            return "🏠 Contas Fixas (Necessidade)"
-        elif any(
-            x in desc_upper
-            for x in [
-                "AUTO",
-                "POSTO",
-                "COMBUSTIVEL",
-                "UBER",
-                "99",
-                "BIKE",
-                "IPVA",
-                "ESTACIONAMENTO",
-            ]
-        ):
-            return "🚗 Transporte (Necessidade)"
-        elif any(
-            x in desc_upper
-            for x in [
-                "FARMACIA",
-                "DROGARIA",
-                "SAUDE",
-                "MEDICO",
-                "HOSPITAL",
-                "LABORATORIO",
-                "REMEDIO",
-                "VITAMINA",
-            ]
-        ):
-            return "💊 Saúde (Necessidade)"
-        elif any(
-            x in desc_upper
-            for x in [
-                "RESTAURANTE",
-                "LANCHONETE",
-                "PIZZA",
-                "BURGER",
-                "PADARIA",
-                "BAR",
-                "IFOOD",
-            ]
-        ):
-            return "🍔 Lazer & Alimentação Fora (Desejos)"
-        elif any(
-            x in desc_upper
-            for x in [
-                "GOOGLE",
-                "SPOTIFY",
-                "STEAM",
-                "JOGO",
-                "NETFLIX",
-                "CINEMA",
-                "AMAZON",
-            ]
-        ):
-            return "🎉 Outros Desejos (Desejos)"
-        elif (
-            "INVEST" in desc_upper
-            or "CORRETORA" in desc_upper
-            or "ACOES" in desc_upper
-            or "TESOURO" in desc_upper
-            or "CAIXINHA" in desc_upper
-        ):
-            return "📈 Investimentos / Poupança (20%)"
-        return "🛒 Supermercado (Necessidade)"
-
-
 def extrair_mes_ano_do_nome(nome_arquivo):
     nome_up = nome_arquivo.upper()
     meses_map = {
@@ -574,8 +433,6 @@ with col_tit:
         " auditoria de holerites."
     )
 
-
-# Força o estado da sidebar no Streamlit moderno
 if hasattr(st, "set_sidebar_state"):
     st.set_sidebar_state(st.session_state.sidebar_state)
 
@@ -589,11 +446,9 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # --- BLOCO DE BACKUP E RESTAURAÇÃO RÁPIDA NA BARRA LATERAL ---
     with st.expander("💾 Central de Backup & Segurança", expanded=False):
         st.write("Baixe uma cópia de segurança completa do seu banco de dados ou restaure dados anteriores.")
         
-        # Botão de Download Direto
         with open("gestor_financeiro.db", "rb") as f_bkp:
             st.download_button(
                 "📥 Baixar Backup (.db)",
@@ -605,12 +460,11 @@ with st.sidebar:
         
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
         
-        # Upload para Restaurar Backup
         arquivo_restore = st.file_uploader("Restaurar Banco de Dados (.db)", type=["db"], key="restore_db_sidebar")
         if arquivo_restore is not None:
             if st.button("🔄 Confirmar Restauração", use_container_width=True):
                 try:
-                    conn.close() # Fecha a conexão atual antes de substituir
+                    conn.close()
                     with open("gestor_financeiro.db", "wb") as f_out:
                         f_out.write(arquivo_restore.getbuffer())
                     st.success("Backup restaurado com sucesso! Reiniciando o app...")
@@ -709,11 +563,13 @@ if st.session_state.pagina_atual == "🏠 Início / Painel":
                 try:
                     v_dt = datetime.strptime(str(cp["vencimento"])[:10], "%Y-%m-%d").date()
                     if hoje_alerta <= v_dt <= daqui_5_dias:
+                        dias_restantes = (v_dt - hoje_alerta).days
                         contas_proximas.append({
                             "tipo": "Conta a Pagar",
                             "desc": cp["descricao"],
                             "val": cp["valor"],
                             "data": v_dt,
+                            "dias": dias_restantes,
                         })
                 except:
                     pass
@@ -723,11 +579,13 @@ if st.session_state.pagina_atual == "🏠 Início / Painel":
                 try:
                     v_dt = datetime.strptime(str(cr["vencimento"])[:10], "%Y-%m-%d").date()
                     if hoje_alerta <= v_dt <= daqui_5_dias:
+                        dias_restantes = (v_dt - hoje_alerta).days
                         contas_proximas.append({
                             "tipo": "Conta a Receber",
                             "desc": cr["descricao"],
                             "val": cr["valor"],
                             "data": v_dt,
+                            "dias": dias_restantes,
                         })
                 except:
                     pass
@@ -735,7 +593,7 @@ if st.session_state.pagina_atual == "🏠 Início / Painel":
         if contas_proximas:
             st.markdown(
                 """
-                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+                <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(239, 68, 68, 0.08) 100%); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 18px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
                     <h4 style="color: #f59e0b; margin-top: 0; display: flex; align-items: center; gap: 8px;">🔔 Alerta: Contas Próximas ao Vencimento (Próximos 5 Dias)</h4>
                 """,
                 unsafe_allow_html=True,
@@ -744,8 +602,18 @@ if st.session_state.pagina_atual == "🏠 Início / Painel":
                 cor_badge = (
                     "#ef4444" if cp_prox["tipo"] == "Conta a Pagar" else "#22c55e"
                 )
+                
+                if cp_prox["dias"] == 0:
+                    texto_dias = '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">VENCE HOJE!</span>'
+                elif cp_prox["dias"] == 1:
+                    texto_dias = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Vence amanhã</span>'
+                else:
+                    texto_dias = f'<span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">Vence em {cp_prox["dias"]} dias</span>'
+
                 st.markdown(
-                    f"""<p style="margin: 4px 0; color: #f8fafc; font-size: 14px;">• <span style="color: {cor_badge}; font-weight: 600;">{cp_prox['tipo']}</span>: <b>{cp_prox['desc']}</b> no valor de <b>R$ {cp_prox['val']:,.2f}</b> com vencimento em <b>{cp_prox['data'].strftime('%d/%m/%Y')}</b></p>""",
+                    f"""<p style="margin: 8px 0; color: #f8fafc; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+                        • <span style="color: {cor_badge}; font-weight: 600;">{cp_prox['tipo']}</span>: <b>{cp_prox['desc']}</b> no valor de <b style="color: #34d399;">R$ {cp_prox['val']:,.2f}</b> — {texto_dias} <span style="color: #94a3b8; font-size: 12px;">(Data: {cp_prox['data'].strftime('%d/%m/%Y')})</span>
+                    </p>""",
                     unsafe_allow_html=True,
                 )
             st.markdown("</div>", unsafe_allow_html=True)
@@ -811,23 +679,19 @@ if st.session_state.pagina_atual == "🏠 Início / Painel":
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown(
-            '<div class="group-card"><div class="group-title">Inovação & IA & Notas Fiscais</div>',
+            '<div class="group-card"><div class="group-title">Inovação, Tarefas & Notas Fiscais</div>',
             unsafe_allow_html=True,
         )
-        sub1, sub2, sub3, sub4 = st.columns(4)
+        sub1, sub2, sub3 = st.columns(3)
         with sub1:
-            if st.button("🎙️ Voz", use_container_width=True):
-                mudar_pagina("🎙️ Lançar por Voz")
-                st.rerun()
-        with sub2:
             if st.button("📝 Tarefas", use_container_width=True):
                 mudar_pagina("📝 Tarefas & Compras")
                 st.rerun()
-        with sub3:
+        with sub2:
             if st.button("🧾 Notas", use_container_width=True):
                 mudar_pagina("🧾 Leitor de Notas Fiscais")
                 st.rerun()
-        with sub4:
+        with sub3:
             if st.button("❤️ Saúde", use_container_width=True):
                 mudar_pagina("❤️ Saúde Financeira")
                 st.rerun()
@@ -865,15 +729,35 @@ elif st.session_state.pagina_atual == "🔴 Lançar Despesa":
     )
 
     cats_padrao = [
-        "🏠 Contas Fixas (Necessidade)",
-        "🛒 Supermercado (Necessidade)",
-        "🐾 Pet (Necessidade)",
-        "🚗 Transporte (Necessidade)",
-        "💊 Saúde (Necessidade)",
-        "🍔 Lazer & Alimentação Fora (Desejos)",
-        "🎉 Lazer & Entretenimento (Desejos)",
-        "🎉 Outros Desejos (Desejos)",
-        "📈 Investimentos / Poupança (20%)",
+    "💰 01- Pagamento / Salário (Entrada)",
+    "🎫 02- Vale / Adiantamento (Entrada)",
+    "🌴 03- Férias (Entrada)",
+    "💵 04- 13º Salário - 1ª Parcela (Entrada)",
+    "💵 05- 13º Salário - 2ª Parcela / Final (Entrada)",
+    "📑 01- Boletos Diversos (Necessidade)",
+    "🧸 02- Brinquedos & Lazer Infantil (Desejo)",
+    "⛽ 03- Combustíveis (Necessidade)",
+    "📱 04- Contas de Celular (Necessidade)",
+    "💧 05- Contas de Água (Necessidade)",
+    "⚡ 06- Contas de Energia (Necessidade)",
+    "🏠 07- Contas Fixas (Necessidade)",
+    "🩺 08- Consultas Médicas (Necessidade)",
+    "💄 09- Cosméticos & Beleza (Desejo)",
+    "📄 10- IPTU & Impostos Anuais (Necessidade)",
+    "📈 11- Investimentos / Poupança (20%)",
+    "🍔 12- Lazer & Alimentação Fora (Desejos)",
+    "🎉 13- Lazer & Entretenimento (Desejos)",
+    "🏠 14- Manutenção Residencial (Necessidade)",
+    "🛠️ 15- Manutenção Veicular (Necessidade)",
+    "🛍️ 16- Mercado (Desejo)",
+    "🛒 17- Supermercado (Necessidade)",
+    "🎉 18- Outros Desejos (Desejos)",
+    "💸 19- PIX & Transferências (Necessidade)",
+    "💊 20- Saúde & Farmácia (Necessidade)",
+    "🚗 21- Transporte (Necessidade)",
+    "🐾 22- Veterinário & Pet (Necessidade)",
+    "👔 23- Vestuário Básico / Essencial (Necessidade)",
+    "👗 24- Vestuário & Moda (Desejo)",
     ]
     df_cats_db = pd.read_sql("SELECT nome FROM categorias", conn)
     lista_categorias = (
@@ -925,7 +809,6 @@ elif st.session_state.pagina_atual == "🔴 Lançar Despesa":
                     "Preencha uma descrição válida e um valor superior a zero."
                 )
 
-    # Tabela de visualização restrita apenas aos lançamentos manuais
     st.markdown("---")
     st.subheader("📋 Últimas Despesas (Lançamentos Manuais)")
     df_ultimas_desp = pd.read_sql(
@@ -1011,7 +894,6 @@ elif st.session_state.pagina_atual == "🟢 Entradas & Salários":
             else:
                 st.error("Informe uma descrição e um valor de receita válido.")
 
-    # Tabela de visualização restrita apenas aos lançamentos manuais
     st.markdown("---")
     st.subheader("📋 Últimas Entradas (Lançamentos Manuais)")
     df_ultimas_rec = pd.read_sql(
@@ -1036,109 +918,13 @@ elif st.session_state.pagina_atual == "🟢 Entradas & Salários":
         st.info("Nenhuma entrada manual registrada recentemente.")
 
 # ==========================================
-# --- SEÇÃO 2.1: LANÇAR DESPESA POR COMANDO DE VOZ ---
-# ==========================================
-elif st.session_state.pagina_atual == "🎙️ Lançar por Voz":
-    botao_voltar()
-    st.subheader(
-        "🎙️ Lançamento Inteligente de Despesas por Comando de Voz / Texto Falado"
-    )
-    st.write(
-        "Simule ou grave seu comando de voz. Digite ou dite no formato natural,"
-        " por exemplo: <i>'Gastei 45 reais na farmácia hoje'</i> ou <i>'Paguei 120"
-        " de luz ontem'</i>."
-    )
-
-    comando_voz_input = st.text_area(
-        "💬 Comando de Voz Capturado (ou digite sua frase natural):",
-        value="",
-        placeholder="Ex: Gastei 89.90 no supermercado shibata hoje...",
-        help="Você pode digitar ou dite sua frase financeira livremente.",
-    )
-
-    if st.button(
-        "Processar Comando de Voz & Lançar Automaticamente",
-        use_container_width=True,
-    ):
-        if comando_voz_input.strip():
-            texto_cv = comando_voz_input.strip()
-
-            nums_encontrados = re.findall(
-                r"(\d+(?:[.,]\d+)?)", texto_cv.replace(",", ".")
-            )
-            valor_extraido = float(nums_encontrados[0]) if nums_encontrados else 0.0
-
-            if valor_extraido > 0:
-                desc_extraida = texto_cv
-                tipo_trans = (
-                    "Receita"
-                    if any(
-                        p in texto_cv.lower()
-                        for p in ["recebi", "ganhei", "salario", "PIX recebido"]
-                    )
-                    else "Despesa"
-                )
-                cat_extraida = categorizar_automaticamente(desc_extraida, tipo_trans)
-                data_hoje_str = date.today().strftime("%Y-%m-%d")
-
-                c.execute(
-                    "INSERT INTO transacoes (data, tipo, descricao, categoria, valor,"
-                    " origem) VALUES (?,?,?,?,?,?)",
-                    (
-                        data_hoje_str,
-                        tipo_trans,
-                        desc_extraida,
-                        cat_extraida,
-                        valor_extraido,
-                        "Voz_IA",
-                    ),
-                )
-                conn.commit()
-
-                st.success("🎉 **Lançamento por Voz Realizado com Sucesso!**")
-                st.markdown(
-                    f"""
-                    <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 15px; margin-top: 10px;">
-                        <p><b>Tipo:</b> {tipo_trans}</p>
-                        <p><b>Descrição:</b> {desc_extraida}</p>
-                        <p><b>Valor:</b> R$ {valor_extraido:,.2f}</p>
-                        <p><b>Categoria Atribuída:</b> {cat_extraida}</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.error(
-                    "Não foi possível identificar um valor numérico válido no comando"
-                    " falado/digitado. Tente incluir o valor (ex: '45 reais')."
-                )
-        else:
-            st.warning("Insira um comando de voz ou frase para processar.")
-
-    st.markdown("---")
-    st.subheader("📋 Últimos Lançamentos via Comando de Voz")
-    df_voz_all = pd.read_sql(
-        "SELECT * FROM transacoes WHERE origem = 'Voz_IA' ORDER BY id DESC", conn
-    )
-    if not df_voz_all.empty:
-        df_voz_all["data"] = df_voz_all["data"].apply(formatar_data_ptbr)
-        st.dataframe(
-            df_voz_all[["data", "tipo", "descricao", "categoria", "valor"]],
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.info("Nenhum lançamento por voz registrado ainda.")
-
-# ==========================================
-# --- SEÇÃO: TAREFAS & COMPRAS (SEPARADAS EM ABAS) ---
+# --- SEÇÃO: TAREFAS & COMPRAS ---
 # ==========================================
 elif st.session_state.pagina_atual == "📝 Tarefas & Compras":
     botao_voltar()
     st.subheader("📝 Central de Organização: Compras & Tarefas")
     st.write("Gerencie suas compras e tarefas em abas separadas, acompanhe valores e salve automaticamente ao marcar os itens.")
 
-    # Cria tabela unificada com suporte a valor e status
     c.execute("""
         CREATE TABLE IF NOT EXISTS tarefas_compras (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -1150,7 +936,6 @@ elif st.session_state.pagina_atual == "📝 Tarefas & Compras":
     """)
     conn.commit()
 
-    # Formulário único para cadastro rápido indicando se é Compra ou Tarefa
     with st.form("form_nova_tarefa_compra", clear_on_submit=True):
         col_t1, col_t2, col_t3 = st.columns([2, 1, 1])
         with col_t1:
@@ -1176,15 +961,9 @@ elif st.session_state.pagina_atual == "📝 Tarefas & Compras":
 
     st.markdown("---")
 
-    # Recupera os dados do banco
     df_geral = pd.read_sql("SELECT * FROM tarefas_compras", conn)
-
-    # Criação das Abas Separadas
     aba_compras, aba_tarefas = st.tabs(["🛒 Lista de Compras", "📋 Lista de Tarefas"])
 
-    # ==========================================
-    # --- ABA 1: COMPRAS ---
-    # ==========================================
     with aba_compras:
         st.markdown("### 🛒 Gestão de Compras & Projeção de Gastos")
         df_compras = df_geral[df_geral["tipo"] == "🛒 Compra"] if not df_geral.empty else pd.DataFrame()
@@ -1194,7 +973,6 @@ elif st.session_state.pagina_atual == "📝 Tarefas & Compras":
             compras_feitas = len(df_compras[df_compras["concluido"] == 1])
             prog_compras = (compras_feitas / total_compras) * 100 if total_compras > 0 else 0.0
 
-            # Projeção: Soma dos valores de itens de compra pendentes
             df_comp_pend = df_compras[df_compras["concluido"] == 0]
             total_projetado = df_comp_pend["valor"].sum() if not df_comp_pend.empty else 0.0
             total_gasto_efetivado = df_compras[df_compras["concluido"] == 1]["valor"].sum() if not df_compras.empty else 0.0
@@ -1245,9 +1023,6 @@ elif st.session_state.pagina_atual == "📝 Tarefas & Compras":
         else:
             st.info("Nenhum item de compra cadastrado.")
 
-    # ==========================================
-    # --- ABA 2: TAREFAS ---
-    # ==========================================
     with aba_tarefas:
         st.markdown("### 📋 Gestão de Tarefas & Pendências")
         df_tarefas = df_geral[df_geral["tipo"] == "📋 Tarefa"] if not df_geral.empty else pd.DataFrame()
@@ -1713,7 +1488,7 @@ elif st.session_state.pagina_atual == "📊 Dashboard Manual":
     df_all = pd.read_sql(
         (
             "SELECT * FROM transacoes WHERE origem = 'Manual' OR origem ="
-            " 'Nota_Fiscal' OR origem = 'Voz_IA' OR origem = 'Chat_IA'"
+            " 'Nota_Fiscal' OR origem = 'Chat_IA'"
         ),
         conn,
     )
@@ -1824,22 +1599,41 @@ elif st.session_state.pagina_atual == "📊 Dashboard Manual":
             )
         with b2:
             st.markdown(
-                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="color: #94a3b8; font-size: 12px; font-weight: 600;">💵 SALDO ATUAL (ENTRADA - SAÍDA)</span><h3 style="color: #3b82f6; margin: 8px 0 0 0; font-size: 18px;">R$ {saldo_caixa:,.2f}</h3></div>""",
+                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🏦 SALDO REAL NO BANCO</span><h3 style="color: #34d399; margin: 8px 0 0 0; font-size: 18px;">R$ {saldo_real_banco_pdf:,.2f}</h3></div>""",
                 unsafe_allow_html=True,
             )
         with b3:
             st.markdown(
-                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🏦 SALDO REAL NO BANCO</span><h3 style="color: #34d399; margin: 8px 0 0 0; font-size: 18px;">R$ {saldo_real_banco_pdf:,.2f}</h3></div>""",
+                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🟢 ENTRADAS MANUAIS</span>
+                    <h3 style="color: #22c55e; margin: 4px 0 8px 0; font-size: 18px;">R$ {receitas:,.2f}</h3>
+                </div>""",
                 unsafe_allow_html=True,
             )
+            if st.button("➕ Nova Entrada", key="btn_atalho_rec", use_container_width=True):
+                mudar_pagina("🟢 Entradas & Salários")
+                st.rerun()
         with b4:
             st.markdown(
-                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🟢 ENTRADAS MANUAIS</span><h3 style="color: #22c55e; margin: 8px 0 0 0; font-size: 18px;">R$ {receitas:,.2f}</h3></div>""",
+                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🔴 DESPESAS MANUAIS</span>
+                    <h3 style="color: #ef4444; margin: 4px 0 8px 0; font-size: 18px;">R$ {despesas:,.2f}</h3>
+                </div>""",
                 unsafe_allow_html=True,
             )
+            if st.button("➕ Nova Despesa", key="btn_atalho_desp", use_container_width=True):
+                mudar_pagina("🔴 Lançar Despesa")
+                st.rerun()
         with b5:
+            cor_card_bg = "rgba(34, 197, 94, 0.12)" if saldo_caixa >= 0 else "rgba(239, 68, 68, 0.12)"
+            cor_card_borda = "rgba(34, 197, 94, 0.4)" if saldo_caixa >= 0 else "rgba(239, 68, 68, 0.4)"
+            cor_saldo = "#34d399" if saldo_caixa >= 0 else "#ef4444"
             st.markdown(
-                f"""<div style="background: rgba(25,29,38,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="color: #94a3b8; font-size: 12px; font-weight: 600;">🔴 DESPESAS MANUAIS</span><h3 style="color: #ef4444; margin: 8px 0 0 0; font-size: 18px;">R$ {despesas:,.2f}</h3></div>""",
+                f"""<div style="background: {cor_card_bg}; border: 1px solid {cor_card_borda}; border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 600;">💵 SALDO DISPONÍVEL (ENTRADAS - GASTOS)</span>
+                    <h3 style="color: {cor_saldo}; margin: 8px 0 0 0; font-size: 18px;">R$ {saldo_caixa:,.2f}</h3>
+                    <span style="font-size: 10px; color: #94a3b8;">Baseado nas entradas e gastos do mês</span>
+                </div>""",
                 unsafe_allow_html=True,
             )
 
@@ -3115,7 +2909,7 @@ elif st.session_state.pagina_atual == "🎯 Desafios":
                         )
                     conn.commit()
                     st.success(
-                        f"Depósito(s) {', '.join(map(str, deps_sel))} atualizado(s) para"
+                        f"Depósito(s) {', '.join(map(str, deps_sel))} updated(s) para"
                         f" '{status_novo}' com sucesso!"
                     )
                     st.rerun()
@@ -3179,7 +2973,7 @@ elif st.session_state.pagina_atual == "🎯 Metas de Gastos":
     df_trans_meta = pd.read_sql(
         (
             "SELECT * FROM transacoes WHERE tipo = 'Despesa' AND (origem ="
-            " 'Manual' OR origem = 'Nota_Fiscal' OR origem = 'Voz_IA' OR origem ="
+            " 'Manual' OR origem = 'Nota_Fiscal' OR origem ="
             " 'Chat_IA')"
         ),
         conn,
@@ -3495,14 +3289,14 @@ elif st.session_state.pagina_atual == "❤️ Saúde Financeira":
     botao_voltar()
     st.subheader("❤️ Score de Saúde Financeira & Auditoria de Perfil")
     st.write(
-        "Pontuação calculada de 0 a 1000 com base en endividamento, taxa de"
+        "Pontuação calculada de 0 a 1000 com base em endividamento, taxa de"
         " poupança, disciplina e cumprimento de tetos."
     )
 
     df_saude = pd.read_sql(
         (
             "SELECT * FROM transacoes WHERE origem = 'Manual' OR origem ="
-            " 'Nota_Fiscal' OR origem = 'Voz_IA' OR origem = 'Chat_IA'"
+            " 'Nota_Fiscal' OR origem = 'Chat_IA'"
         ),
         conn,
     )
@@ -3672,7 +3466,7 @@ elif st.session_state.pagina_atual == "📅 Contas a Pagar":
 
     st.markdown("---")
 
-    st.markdown("##### 🗓️ Seleção de Data no Calendário Interativo & Período")
+    st.markdown("##### 🗓️ Seleção de Date no Calendário Interativo & Período")
     data_calendario_topo = st.date_input(
         "Selecionar Data de Referência (DD/MM/AAAA):",
         value=st.session_state.data_calendario_ref,
@@ -3854,8 +3648,9 @@ elif st.session_state.pagina_atual == "📅 Contas a Pagar":
                 st.markdown("### 🚨 Alertas de Vencimento (Pagar)")
                 if not vencidas.empty:
                     for _, r_venc in vencidas.iterrows():
+                        dias_atraso = (hoje_atual - r_venc["venc_dt"]).days
                         st.error(
-                            f"⚠️ **Conta Vencida:** '{r_venc['descricao']}' vencia em"
+                            f"⚠️ **Conta Vencida há {dias_atraso} dia(s):** '{r_venc['descricao']}' vencia em"
                             f" **{formatar_data_ptbr(r_venc['vencimento'])}** no valor de"
                             f" **R$ {r_venc['valor']:,.2f}**!"
                         )
@@ -4729,12 +4524,11 @@ elif st.session_state.pagina_atual == "📋 Extrato & Backup":
         st.info("Nenhum extrato armazenado no banco de dados.")
 
 # ==========================================
-# --- SEÇÃO 12: HOLERITES (COM SENHA DE ACESSO) ---
+# --- SEÇÃO 12: HOLERITES ---
 # ==========================================
 elif st.session_state.pagina_atual == "📄 Holerites":
     botao_voltar()
 
-    # Trava de segurança: Garante que se a página atual for recarregada ou acessada de novo, ela inicia bloqueada
     if st.session_state.get("pagina_anterior_holerite") != "📄 Holerites":
         st.session_state.holerites_desbloqueado = False
         st.session_state.pagina_anterior_holerite = "📄 Holerites"
@@ -4889,10 +4683,8 @@ elif st.session_state.pagina_atual == "📄 Holerites":
             st.markdown("---")
             st.subheader("🔍 Detalhamento Completo por Rubricas (Espelho do Holerite)")
             
-            # CSS para compactar a tabela e aproximar as colunas
             st.markdown("""
                 <style>
-                    /* Ajusta o padding e deixa a tabela mais compacta e coesa */
                     [data-testid="stDataFrame"] div[data-testid="stTable"] {
                         width: 100%;
                     }
@@ -4940,7 +4732,6 @@ elif st.session_state.pagina_atual == "📄 Holerites":
                 df_rubricas = pd.DataFrame(dados_rubricas)
                 st.dataframe(df_rubricas, use_container_width=False, hide_index=True)
 
-                # --- INDICADOR DOS MAIORES GASTOS/DESCONTOS DO MÊS ---
                 st.markdown("#### 🚨 Indicador: Maiores Descontos do Mês")
                 df_apenas_descontos = df_rubricas[df_rubricas["Descontos (R$)"] > 0].copy()
                 
@@ -4957,7 +4748,6 @@ elif st.session_state.pagina_atual == "📄 Holerites":
                 else:
                     st.info("Nenhum desconto registrado para este período.")
 
-                # --- GRÁFICO DE PARETO DOS DESCONTOS ---
                 st.markdown("---")
                 st.markdown("#### 📈 Gráfico de Pareto: Concentração dos Maiores Descontos")
                 
@@ -5050,3 +4840,74 @@ elif st.session_state.pagina_atual == "📄 Holerites":
                 st.rerun()
         else:
             st.info("Nenhum holerite cadastrado ou importado até o momento.")
+
+# ==========================================
+# --- SEÇÃO: LEITOR DE NOTAS FISCAIS ---
+# ==========================================
+elif st.session_state.pagina_atual == "🧾 Leitor de Notas Fiscais":
+    if st.button("⬅️ Voltar"):
+        st.session_state.pagina_atual = "🏠 Início / Painel"
+        st.rerun()
+
+    st.subheader("🧾 Lançamento Manual de Nota Fiscal (Via Câmera)")
+    
+    foto_nota = st.camera_input("Clique no ícone abaixo para tirar a foto da nota")
+
+    if foto_nota:
+        st.success("Nota capturada!")
+        
+        with st.form("form_lancar_nota_manual", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                estab = st.text_input("Estabelecimento")
+                data_nota = st.date_input("Data da Emissão")
+            with col2:
+                valor_nota = st.number_input("Valor Total (R$)", format="%.2f")
+                
+            st.write("---")
+            st.write("### Adicionar Itens (Opcional)")
+            num_itens = st.number_input("Quantos itens?", min_value=1, max_value=20, value=1)
+            
+            itens = []
+            for i in range(num_itens):
+                c1, c2, c3 = st.columns(3)
+                with c1: prod = st.text_input(f"Produto {i+1}", key=f"p{i}")
+                with c2: qtd = st.number_input(f"Qtd {i+1}", value=1.0, key=f"q{i}")
+                with c3: val_u = st.number_input(f"Vlr Unit {i+1}", value=0.0, format="%.2f", key=f"v{i}")
+                itens.append((prod, qtd, val_u, qtd * val_u))
+
+            if st.form_submit_button("Salvar Nota Fiscal"):
+                c.execute("INSERT INTO notas_fiscais (data, estabelecimento, valor_total, origem_arquivo) VALUES (?,?,?,?)",
+                          (data_nota.strftime("%Y-%m-%d"), estab, valor_nota, "Captura Câmera"))
+                nota_id = c.lastrowid
+                
+                for item in itens:
+                    c.execute("INSERT INTO itens_nota_fiscal (nota_id, produto, quantidade, valor_unitario, valor_total) VALUES (?,?,?,?,?)",
+                              (nota_id, item[0], item[1], item[2], item[3]))
+                
+                conn.commit()
+                st.toast("Nota salva com sucesso!", icon="✅")
+                st.rerun()
+
+    st.divider()
+    st.subheader("🕒 Lançamentos Recentes")
+    
+    query_check = """
+        SELECT data, estabelecimento, valor_total 
+        FROM notas_fiscais 
+        ORDER BY id DESC 
+        LIMIT 5
+    """
+    
+    try:
+        df_check = pd.read_sql_query(query_check, conn)
+        if not df_check.empty:
+            st.dataframe(df_check.rename(columns={
+                'data': 'Data', 
+                'estabelecimento': 'Local', 
+                'valor_total': 'Total'
+            }), use_container_width=True, hide_index=True)
+        else:
+            st.caption("Nenhum lançamento registrado ainda.")
+    except Exception as e:
+        st.error("Erro ao carregar histórico.")
